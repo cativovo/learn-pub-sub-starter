@@ -18,7 +18,7 @@ func main() {
 	conn, err := amqp.Dial(connStr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to connect to RabbitMQ: %v", err)
-		os.Exit(1)
+		return
 	}
 	defer conn.Close()
 

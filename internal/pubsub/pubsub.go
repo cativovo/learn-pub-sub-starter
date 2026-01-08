@@ -29,3 +29,53 @@ func PublishJSON[T any](ctx context.Context, ch *amqp.Channel, exchange string, 
 
 	return nil
 }
+
+type SimpleQueueType int
+
+const (
+	SimpleQueueTypeDurable SimpleQueueType = iota
+	SimpleQueueTypeTransient
+)
+
+// DeclareAndBind declares a queue and binds it to an exchange
+func DeclareAndBind(
+	conn *amqp.Connection,
+	exchange string,
+	queueName string,
+	key string,
+	queueType SimpleQueueType,
+) (*amqp.Channel, amqp.Queue, error) {
+	ch, err := conn.Channel()
+	if err != nil {
+		return nil, amqp.Queue{}, fmt.Errorf("pubsub: open channel: %w", err)
+	}
+
+	durable := queueType == SimpleQueueTypeDurable
+	autoDelete := queueType == SimpleQueueTypeTransient
+	exclusive := queueType == SimpleQueueTypeTransient
+
+	queue, err := ch.QueueDeclare(
+		queueName,
+		durable,
+		autoDelete,
+		exclusive,
+		false,
+		nil,
+	)
+	if err != nil {
+		return nil, amqp.Queue{}, fmt.Errorf("pubsub: queue declare: %w", err)
+	}
+
+	err = ch.QueueBind(
+		queueName,
+		key,
+		exchange,
+		false,
+		nil,
+	)
+	if err != nil {
+		return nil, amqp.Queue{}, fmt.Errorf("pubsub: queue bind: %w", err)
+	}
+
+	return ch, queue, nil
+}
