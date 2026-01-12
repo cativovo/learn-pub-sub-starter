@@ -49,6 +49,45 @@ func main() {
 	_ = ch
 	_ = queue
 
+	go func() {
+		defer cancel()
+
+		gameState := gamelogic.NewGameState(name)
+
+		for {
+			input := gamelogic.GetInput()
+			if len(input) == 0 {
+				continue
+			}
+
+			words := input
+
+			switch input[0] {
+			case "spawn":
+				if err := gameState.CommandSpawn(words); err != nil {
+					fmt.Println("Failed to spawn,", err)
+				}
+			case "move":
+				m, err := gameState.CommandMove(words)
+				if err != nil {
+					fmt.Println("Failed to move,", err)
+				}
+				_ = m
+			case "status":
+				gameState.CommandStatus()
+			case "help":
+				gamelogic.PrintClientHelp()
+			case "spam":
+				fmt.Println("Spamming not allowed yet!")
+			case "quit":
+				fmt.Println("Quitting...")
+				return
+			default:
+				fmt.Println("Unable to process the command")
+			}
+		}
+	}()
+
 	<-ctx.Done()
 
 	fmt.Println("Shutting down the client...")
